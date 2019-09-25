@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
-
-
 import os
 os.environ["UW_ENABLE_TIMING"] = "1"
 import underworld as uw
@@ -12,6 +6,19 @@ import underworld.visualisation as vis
 import math
 import numpy as np
 import time
+
+time_post_import   = time.time()
+time_launch_srun   = float(os.getenv("TIME_LAUNCH_JOB"  ,time_post_import))/1000.
+time_launch_python = float(os.getenv("TIME_LAUNCH_PYTHON",time_post_import))/1000.
+uw.timing.start()
+
+other_timing = {}
+other_timing["Python_Import_Time"] = time_post_import - time_launch_python
+other_timing["Container_Launch_Time"] = time_launch_python - time_launch_srun
+
+job_name = os.getenv["UW_JOB_NAME","Default"]
+job_id   = os.getenv["UW_JOB_ID","00000"]
+
 
 order = int(os.getenv("UW_ORDER","2"))
 res   = int(os.getenv("UW_RESOLUTION",16))
@@ -41,18 +48,6 @@ for _soln in dir(fn.analytic):
         solns_avail[_soln] = soln
 soln = solns_avail[soln_name]()
 
-
-# In[3]:
-
-
-time_post_import   = time.time()
-time_launch_srun   = float(os.getenv("TIME_LAUNCH_SRUN"  ,time_post_import))/1000.
-time_launch_python = float(os.getenv("TIME_LAUNCH_PYTHON",time_post_import))/1000.
-uw.timing.start()
-
-other_timing = {}
-other_timing["Python_Import_Time"] = time_post_import - time_launch_python
-other_timing["Container_Launch_Time"] = time_launch_python - time_launch_srun
 
 
 # In[4]:
@@ -227,7 +222,7 @@ uw.timing.stop()
 module_timing_data_orig = uw.timing.get_data(group_by="line_routine")
 
 # write out data
-filename = "{}_Res_{}_Nproc_{}_SlurmID_{}".format(os.getenv("SLURM_JOB_NAME","Job"),res,uw.mpi.size,os.getenv("SLURM_JOB_ID",0000))
+filename = "{}_Res_{}_Nproc_{}_SlurmID_{}".format(job_name,res,uw.mpi.size,job_id)
 import json
 if module_timing_data_orig:
     module_timing_data = {}
